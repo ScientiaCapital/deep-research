@@ -1,125 +1,204 @@
-import { MODELS, type ModelId } from './openrouter'
-
-interface SelectionResult {
-  model: ModelId
-  reason: string
-}
+import {
+  MODELS,
+  FALLBACK_CHAINS,
+  getModelDisplayInfo,
+  type ModelCategory,
+} from './openrouter'
 
 /**
- * Intelligently selects the best model based on query characteristics.
+ * Selection result with fallback chain for auto-failover
+ */
+export interface SelectionResult {
+  model: string
+  fallbacks: string[]
+  reason: string
+  category: ModelCategory
+}
+
+// ============================================
+// CODE DETECTION PATTERNS
+// ============================================
+const CODE_PATTERNS = [
+  // Explicit code keywords
+  /\b(code|function|implement|debug|refactor|script|program|algorithm)\b/i,
+
+  // Programming languages
+  /\b(python|javascript|typescript|react|vue|angular|java|rust|go|c\+\+|ruby|php|swift|kotlin)\b/i,
+
+  // Code blocks in message
+  /```/,
+
+  // Bug/error fixing
+  /\b(fix|solve|patch)\s+(the|this|a|my)?\s*(bug|error|issue|problem)/i,
+
+  // Technical terms
+  /\b(api|endpoint|database|query|sql|json|xml|html|css)\b/i,
+
+  // Development actions
+  /\b(write|create|build|generate)\s+(a|the|some)?\s*(code|function|class|component|module)/i,
+]
+
+// ============================================
+// REASONING DETECTION PATTERNS
+// ============================================
+const REASONING_PATTERNS = [
+  // Analysis keywords
+  /\b(analyze|compare|evaluate|assess|examine|critique|review)\b/i,
+
+  // Explanation requests
+  /\b(explain\s+(why|how)|how\s+does\s+.+\s+work|what\s+causes)\b/i,
+
+  // Trade-off discussions
+  /\b(pros|cons|advantages|disadvantages|trade-?offs|benefits|drawbacks)\b/i,
+
+  // Research requests
+  /\b(research|investigate|deep\s*dive|break\s*down|summarize)\b/i,
+
+  // Complex thinking
+  /\b(implications|consequences|considerations|factors|aspects)\b/i,
+
+  // Strategic planning
+  /\b(strategy|approach|methodology|framework|architecture)\b/i,
+]
+
+/**
+ * Intelligently selects the optimal model based on query characteristics.
  *
- * Selection logic:
- * - Code queries → Qwen Coder (specialized)
- * - Deep reasoning → DeepSeek R1 (best reasoning)
- * - Quick questions → Qwen 72B (fast, cheap)
- * - Long conversations → DeepSeek Chat (128k context)
+ * Selection Logic:
+ * 1. Vision queries → Qwen VL 72B
+ * 2. Code queries → Qwen Coder 32B (142x cheaper than GPT-4)
+ * 3. Reasoning queries → DeepSeek R1 (27x cheaper than o1)
+ * 4. Long conversations → Qwen 72B (128k context)
+ * 5. General queries → DeepSeek Chat V3.1 (fast, cheap)
  */
 export function selectModel(
   query: string,
-  conversationLength: number = 0
+  conversationLength: number = 0,
+  hasImages: boolean = false
 ): SelectionResult {
-  const lowerQuery = query.toLowerCase()
-
-  // Code-related patterns
-  const codePatterns = [
-    /\bcode\b/i,
-    /\bfunction\b/i,
-    /\bimplement\b/i,
-    /\bdebug\b/i,
-    /\bfix\s+(the|this|a)?\s*(bug|error|issue)/i,
-    /\bwrite\s+(a|the)?\s*(script|program|function)/i,
-    /\brefactor/i,
-    /\bpython\b/i,
-    /\bjavascript\b/i,
-    /\btypescript\b/i,
-    /\breact\b/i,
-    /```/,  // Code blocks
-  ]
-
-  // Deep reasoning patterns
-  const reasoningPatterns = [
-    /\banalyze\b/i,
-    /\bcompare\b/i,
-    /\bexplain\s+why\b/i,
-    /\bdeep\s+dive\b/i,
-    /\bresearch\b/i,
-    /\bwhat\s+are\s+the\s+(pros|cons|advantages|disadvantages)/i,
-    /\bhow\s+does\s+.+\s+work/i,
-    /\bbreak\s*down\b/i,
-    /\bcritical\s*(thinking|analysis)/i,
-    /\bevaluate\b/i,
-  ]
-
-  // Check for code queries
-  if (codePatterns.some(pattern => pattern.test(query))) {
+  // ============================================
+  // VISION: Image content takes priority
+  // ============================================
+  if (hasImages) {
     return {
-      model: MODELS.QWEN_CODER,
-      reason: 'Code-related query detected',
+      model: MODELS.VISION,
+      fallbacks: FALLBACK_CHAINS.vision,
+      reason: 'Image content detected',
+      category: 'vision',
     }
   }
 
-  // Check for complex reasoning
-  if (reasoningPatterns.some(pattern => pattern.test(lowerQuery))) {
+  const queryLower = query.toLowerCase()
+
+  // ============================================
+  // CODE: Programming-related queries
+  // ============================================
+  if (CODE_PATTERNS.some((pattern) => pattern.test(query))) {
     return {
-      model: MODELS.DEEPSEEK_R1,
-      reason: 'Complex reasoning/analysis detected',
+      model: MODELS.CODE,
+      fallbacks: FALLBACK_CHAINS.code,
+      reason: 'Code-related query',
+      category: 'code',
     }
   }
 
-  // Long conversations need better context handling
-  if (conversationLength > 10) {
+  // ============================================
+  // REASONING: Complex analysis queries
+  // ============================================
+  if (REASONING_PATTERNS.some((pattern) => pattern.test(queryLower))) {
     return {
-      model: MODELS.DEEPSEEK_CHAT,
-      reason: 'Long conversation - using 128k context model',
+      model: MODELS.REASONING,
+      fallbacks: FALLBACK_CHAINS.reasoning,
+      reason: 'Complex reasoning detected',
+      category: 'reasoning',
     }
   }
 
-  // Very long queries might need deeper thought
+  // ============================================
+  // LONG QUERIES: Often need deeper thought
+  // ============================================
   if (query.length > 500) {
     return {
-      model: MODELS.DEEPSEEK_R1,
+      model: MODELS.REASONING,
+      fallbacks: FALLBACK_CHAINS.reasoning,
       reason: 'Complex query detected',
+      category: 'reasoning',
     }
   }
 
-  // Default to fast model for simple queries
+  // ============================================
+  // EXTENDED CONTEXT: Long conversations
+  // ============================================
+  if (conversationLength > 15) {
+    return {
+      model: MODELS.EXTENDED,
+      fallbacks: [MODELS.GENERAL],
+      reason: 'Long conversation context',
+      category: 'general',
+    }
+  }
+
+  // ============================================
+  // DEFAULT: Fast DeepSeek Chat for general queries
+  // ============================================
   return {
-    model: MODELS.QWEN_72B,
-    reason: 'General query - using fast model',
+    model: MODELS.GENERAL,
+    fallbacks: FALLBACK_CHAINS.general,
+    reason: 'General query',
+    category: 'general',
   }
 }
 
 /**
- * Gets the system prompt based on the selected model
+ * Gets the system prompt tailored to the selected model category
  */
-export function getSystemPrompt(model: ModelId): string {
-  const basePrompt = `You are a helpful AI research assistant. You provide accurate, well-sourced information.
+export function getSystemPrompt(category: ModelCategory): string {
+  const basePrompt = `You are Deep Research, an AI research assistant that provides accurate, well-sourced information.
 
-When providing information:
+Core principles:
 - Be concise but thorough
 - Cite sources when available
 - Acknowledge uncertainty
-- Structure responses clearly with headers and bullet points when appropriate`
+- Structure responses with headers and bullet points when helpful`
 
-  if (model === MODELS.QWEN_CODER) {
-    return `${basePrompt}
+  switch (category) {
+    case 'code':
+      return `${basePrompt}
 
 You specialize in coding tasks. When writing code:
-- Include comments explaining the logic
+- Include comments explaining complex logic
 - Follow best practices for the language
-- Consider edge cases
-- Suggest tests when appropriate`
-  }
+- Consider edge cases and error handling
+- Suggest tests when appropriate
+- Use modern syntax and patterns`
 
-  if (model === MODELS.DEEPSEEK_R1) {
-    return `${basePrompt}
+    case 'reasoning':
+      return `${basePrompt}
 
 For complex analysis:
 - Break down problems step by step
-- Consider multiple perspectives
+- Consider multiple perspectives and trade-offs
 - Identify assumptions and limitations
-- Provide actionable insights`
-  }
+- Provide actionable insights
+- Support conclusions with evidence`
 
-  return basePrompt
+    case 'vision':
+      return `${basePrompt}
+
+When analyzing images:
+- Describe what you observe in detail
+- Identify key elements and patterns
+- Provide context when relevant
+- Answer questions about specific parts of the image`
+
+    default:
+      return basePrompt
+  }
+}
+
+/**
+ * Gets display info for the selected model (IP protected)
+ */
+export function getSelectionDisplayInfo(selection: SelectionResult): { name: string; icon: string } {
+  return getModelDisplayInfo(selection.model)
 }

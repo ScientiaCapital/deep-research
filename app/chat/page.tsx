@@ -1,7 +1,94 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
+
+// 50+ fun prompts across all categories
+const ALL_SUGGESTIONS = [
+  // 🔬 Science & Learning
+  { icon: '🔬', text: 'Explain quantum computing like I\'m 12' },
+  { icon: '🧬', text: 'How does CRISPR gene editing actually work?' },
+  { icon: '🌌', text: 'What would happen if you fell into a black hole?' },
+  { icon: '🧪', text: 'Why does mixing baking soda and vinegar explode?' },
+  { icon: '🦠', text: 'How do vaccines train your immune system?' },
+  { icon: '⚡', text: 'Explain electricity like I\'ve never seen it' },
+  { icon: '🌊', text: 'Why is the ocean salty but lakes aren\'t?' },
+  { icon: '🌋', text: 'What causes earthquakes and can we predict them?' },
+  { icon: '🧠', text: 'How does memory actually work in the brain?' },
+  { icon: '🔭', text: 'Is time travel theoretically possible?' },
+
+  // 💻 Code & Tech
+  { icon: '💻', text: 'Write a Python function to check if a number is prime' },
+  { icon: '🐍', text: 'Explain Python decorators with a simple example' },
+  { icon: '⚛️', text: 'Build a React hook for dark mode toggle' },
+  { icon: '🗄️', text: 'Write a SQL query to find duplicate emails' },
+  { icon: '🔐', text: 'How do I hash passwords securely in Node.js?' },
+  { icon: '📱', text: 'Create a responsive navbar in CSS' },
+  { icon: '🤖', text: 'Write a Discord bot that responds to commands' },
+  { icon: '🎮', text: 'Simple JavaScript game loop explained' },
+  { icon: '📊', text: 'Parse a CSV file in Python with pandas' },
+  { icon: '🔧', text: 'Fix: "Cannot read property of undefined"' },
+  { icon: '🚀', text: 'Deploy a Next.js app to Vercel step by step' },
+  { icon: '🐳', text: 'Explain Docker containers like I\'m 5' },
+
+  // 📊 Business & Strategy
+  { icon: '📈', text: 'Compare React vs Vue vs Svelte for a startup' },
+  { icon: '💼', text: 'Write a cold email that actually gets replies' },
+  { icon: '🎯', text: 'How do I validate a startup idea quickly?' },
+  { icon: '💰', text: 'Explain stock options like I just got a job offer' },
+  { icon: '📋', text: 'Create a product roadmap template' },
+  { icon: '🤝', text: 'How to negotiate salary: a script' },
+  { icon: '📉', text: 'Why do most startups fail?' },
+  { icon: '🏢', text: 'Remote vs office work: honest pros and cons' },
+
+  // 🎨 Creative & Fun
+  { icon: '🎬', text: 'Explain the movie Inception in one paragraph' },
+  { icon: '🎵', text: 'Why do some songs get stuck in your head?' },
+  { icon: '🎨', text: 'How to pick colors that look good together' },
+  { icon: '📚', text: 'Summarize "Atomic Habits" key points' },
+  { icon: '🍳', text: 'Perfect scrambled eggs: the science' },
+  { icon: '☕', text: 'Why does coffee make you poop?' },
+  { icon: '😴', text: 'Why do we dream and what do dreams mean?' },
+  { icon: '🐕', text: 'Why do dogs tilt their heads when you talk?' },
+  { icon: '🎃', text: 'What\'s the scariest thing in the ocean?' },
+  { icon: '🦖', text: 'If dinosaurs were alive today, which would win?' },
+
+  // 🧠 Deep Thinking
+  { icon: '🤔', text: 'Is free will real or just an illusion?' },
+  { icon: '🌍', text: 'Why haven\'t we found aliens yet?' },
+  { icon: '⏰', text: 'Why does time feel faster as you get older?' },
+  { icon: '🪞', text: 'What makes something "art"?' },
+  { icon: '💭', text: 'Can AI ever truly be conscious?' },
+  { icon: '🎲', text: 'Is luck real or just math we don\'t see?' },
+  { icon: '🧩', text: 'Why are some people naturally good at math?' },
+  { icon: '🌙', text: 'Why do we need sleep? What happens if we don\'t?' },
+
+  // 💡 Life Skills
+  { icon: '💡', text: 'How to learn anything faster: proven methods' },
+  { icon: '🏋️', text: 'Gym routine for beginners who hate exercise' },
+  { icon: '💤', text: 'How to actually fall asleep when you can\'t' },
+  { icon: '🧘', text: 'Does meditation actually do anything?' },
+  { icon: '📝', text: 'How to write so people actually read it' },
+  { icon: '🗣️', text: 'How to be better at small talk' },
+  { icon: '🎤', text: 'Overcome fear of public speaking' },
+  { icon: '⏱️', text: 'Time management tips that aren\'t obvious' },
+
+  // 🌐 World & History
+  { icon: '🗺️', text: 'Why is English spoken worldwide?' },
+  { icon: '🏛️', text: 'How did ancient Egyptians build the pyramids?' },
+  { icon: '🗽', text: 'Explain US politics like I\'m not American' },
+  { icon: '💴', text: 'Why does money have value?' },
+  { icon: '🌐', text: 'How does the internet actually work?' },
+  { icon: '📡', text: 'How do satellites stay up there?' },
+  { icon: '✈️', text: 'How do planes fly? Like really.' },
+  { icon: '🚗', text: 'How do self-driving cars see the road?' },
+]
+
+// Shuffle and pick random suggestions
+function getRandomSuggestions(count: number = 4) {
+  const shuffled = [...ALL_SUGGESTIONS].sort(() => Math.random() - 0.5)
+  return shuffled.slice(0, count)
+}
 
 interface Message {
   role: 'user' | 'assistant'
@@ -17,6 +104,12 @@ export default function ChatPage() {
   const [currentModel, setCurrentModel] = useState<{ name: string; icon: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Get random suggestions on mount (client-side only)
+  const [suggestions, setSuggestions] = useState<typeof ALL_SUGGESTIONS>([])
+  useEffect(() => {
+    setSuggestions(getRandomSuggestions(4))
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -135,8 +228,16 @@ export default function ChatPage() {
               </span>
             )}
           </div>
-          <button className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            New Chat
+          <button
+            onClick={() => {
+              setMessages([])
+              setInput('')
+              setSuggestions(getRandomSuggestions(4)) // Fresh prompts!
+              inputRef.current?.focus()
+            }}
+            className="px-3 py-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            + New Chat
           </button>
         </div>
       </header>
@@ -153,12 +254,7 @@ export default function ChatPage() {
                 Ask anything. Get intelligent, well-researched answers.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl px-4">
-                {[
-                  { icon: '🔬', text: 'Explain quantum computing in simple terms' },
-                  { icon: '💻', text: 'Write a Python function to parse JSON' },
-                  { icon: '📊', text: 'Compare React vs Vue for a startup' },
-                  { icon: '🧠', text: 'Analyze the pros and cons of remote work' },
-                ].map((suggestion, i) => (
+                {suggestions.map((suggestion, i) => (
                   <button
                     key={i}
                     onClick={() => setInput(suggestion.text)}
