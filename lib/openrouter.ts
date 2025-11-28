@@ -6,7 +6,7 @@ export const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   defaultHeaders: {
     'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-    'X-Title': 'Perplexity Agent',
+    'X-Title': 'Deep Research',
   },
 })
 
@@ -30,31 +30,31 @@ export const MODELS = {
 
 export type ModelId = typeof MODELS[keyof typeof MODELS]
 
-// Model metadata for display
+// Model metadata for display - generic names to protect IP
 export const MODEL_INFO: Record<ModelId, { name: string; description: string; icon: string }> = {
   [MODELS.DEEPSEEK_R1]: {
-    name: 'DeepSeek R1',
-    description: 'Best for complex reasoning & analysis',
+    name: 'Deep Analysis',
+    description: 'Complex reasoning mode',
     icon: '🧠',
   },
   [MODELS.DEEPSEEK_CHAT]: {
-    name: 'DeepSeek Chat',
-    description: 'Fast general chat with 128k context',
+    name: 'Extended Context',
+    description: 'Long conversation mode',
     icon: '💬',
   },
   [MODELS.QWEN_CODER]: {
-    name: 'Qwen Coder',
-    description: 'Specialized for code tasks',
+    name: 'Code Expert',
+    description: 'Technical mode',
     icon: '💻',
   },
   [MODELS.QWEN_72B]: {
-    name: 'Qwen 72B',
-    description: 'Fast & efficient for quick queries',
+    name: 'Quick Response',
+    description: 'Fast mode',
     icon: '⚡',
   },
   [MODELS.LLAMA_405B]: {
-    name: 'Llama 405B',
-    description: 'Most powerful fallback',
-    icon: '🦙',
+    name: 'Advanced',
+    description: 'High capability mode',
+    icon: '🔬',
   },
 }

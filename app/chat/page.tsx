@@ -150,7 +150,7 @@ export default function ChatPage() {
                 What would you like to research?
               </h2>
               <p className="text-gray-500 dark:text-gray-400 mb-8 text-center max-w-md">
-                Ask anything - I'll automatically pick the best AI model for your question.
+                Ask anything. Get intelligent, well-researched answers.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl px-4">
                 {[
@@ -249,7 +249,7 @@ export default function ChatPage() {
             </button>
           </div>
           <p className="mt-2 text-xs text-center text-gray-500">
-            Auto-selects: DeepSeek R1 for reasoning • Qwen Coder for code • Qwen 72B for quick answers
+            AI automatically adapts to your question type
           </p>
         </form>
       </footer>

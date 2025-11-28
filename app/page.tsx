@@ -47,7 +47,7 @@ export default function Home() {
           </h1>
 
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-2xl mx-auto">
-            The AI that thinks before it answers. Automatically selects the best model for your question—deep reasoning, fast answers, or specialized code help.
+            Ask anything. Our AI automatically understands your question and delivers the best possible answer—whether you need deep analysis, quick facts, or expert code.
           </p>
 
           {/* CTA Buttons */}
@@ -83,9 +83,9 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-purple-600 flex-shrink-0 flex items-center justify-center text-white text-xs">🧠</div>
+                  <div className="w-8 h-8 rounded-full bg-purple-600 flex-shrink-0 flex items-center justify-center text-white text-xs">🔬</div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 flex-1">
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-2 font-medium">DeepSeek R1 • Deep Analysis</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mb-2 font-medium">Deep Research • Analysis Mode</div>
                     <p className="text-sm text-gray-700 dark:text-gray-200">Based on my analysis of both frameworks for startup contexts...</p>
                   </div>
                 </div>
@@ -100,31 +100,28 @@ export default function Home() {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">How it works</h2>
           <p className="text-gray-600 dark:text-gray-400 text-center mb-16 max-w-2xl mx-auto">
-            Your question is analyzed and routed to the perfect AI model automatically.
+            Just ask your question. Our AI handles the rest.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 icon: '🧠',
-                title: 'DeepSeek R1',
-                subtitle: 'For Complex Reasoning',
-                description: 'When you ask "why" or need deep analysis, we use the most powerful reasoning model available.',
-                trigger: 'Triggers on: analyze, compare, explain why',
+                title: 'Deep Analysis',
+                subtitle: 'Complex Questions',
+                description: 'Need to understand why something works? Want a thorough comparison? Get comprehensive, well-reasoned answers.',
               },
               {
                 icon: '💻',
-                title: 'Qwen Coder',
-                subtitle: 'For Code Tasks',
-                description: 'Specialized coding model that understands context and writes clean, documented code.',
-                trigger: 'Triggers on: code, function, debug, implement',
+                title: 'Code Expert',
+                subtitle: 'Technical Tasks',
+                description: 'From debugging to building new features—get clean, documented code that actually works.',
               },
               {
                 icon: '⚡',
-                title: 'Qwen 72B',
-                subtitle: 'For Quick Answers',
-                description: 'Fast and efficient for straightforward questions. Get answers in milliseconds.',
-                trigger: 'Default for simple queries',
+                title: 'Instant Answers',
+                subtitle: 'Quick Questions',
+                description: 'Simple questions get fast, accurate responses. No waiting around for basic information.',
               },
             ].map((feature, i) => (
               <div
@@ -134,8 +131,7 @@ export default function Home() {
                 <div className="text-4xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-bold mb-1">{feature.title}</h3>
                 <p className="text-blue-600 dark:text-blue-400 text-sm mb-3">{feature.subtitle}</p>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{feature.description}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">{feature.trigger}</p>
+                <p className="text-gray-600 dark:text-gray-400">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -154,7 +150,7 @@ export default function Home() {
             </span>
           </div>
           <div className="text-sm text-gray-500">
-            No OpenAI. Just the best open models.
+            Enterprise-grade AI research for professionals.
           </div>
         </div>
       </footer>
