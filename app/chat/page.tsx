@@ -202,6 +202,8 @@ export default function ChatPage() {
     } finally {
       setIsLoading(false)
       setCurrentModel(null)
+      // Auto-focus input so user can type again
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
