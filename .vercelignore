@@ -1,0 +1,15 @@
+# Legacy files from old project structure
+Cerebras-Inference-Cookbook/
+*.py
+*.sh
+CLAUDE_INIT.md
+.cursorrules
+.mcp.json
+.mcp.json.backup
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Supabase (migrations run separately)
+supabase/
