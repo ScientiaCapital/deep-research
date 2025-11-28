@@ -4,6 +4,7 @@
 **Company**: Scientia Capital
 **Status**: Production ✅
 **URL**: https://perplexity-agent.vercel.app
+**GitHub**: https://github.com/ScientiaCapital/deep-research
 
 AI research assistant. Free for Scientia Capital clients.
 
@@ -102,8 +103,9 @@ cd backend && uvicorn main:app --reload
 # Required now
 OPENROUTER_API_KEY=xxx
 
-# For Python agent (later)
-TAVILY_API_KEY=xxx
+# For Python agent (next session)
+TAVILY_API_KEY=xxx  # tavily.com (free 1000/mo)
+EXA_API_KEY=xxx     # exa.ai (free 1000/mo)
 
 # For LangSmith tracing (optional)
 LANGCHAIN_API_KEY=xxx

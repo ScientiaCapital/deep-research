@@ -13,6 +13,7 @@ from langchain_core.tools import tool
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 from tavily import TavilyClient
+from exa_py import Exa
 
 load_dotenv()
 
@@ -47,6 +48,7 @@ def get_llm(model_type: str = "general"):
 # ============================================
 
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+exa_client = Exa(api_key=os.getenv("EXA_API_KEY"))
 
 @tool
 def web_search(query: str) -> str:
@@ -68,6 +70,28 @@ def web_search(query: str) -> str:
         return "\n---\n".join(output) if output else "No results found."
     except Exception as e:
         return f"Search error: {str(e)}"
+
+
+@tool
+def research_search(query: str) -> str:
+    """Search for research papers, documentation, and technical content.
+    Use this for academic questions, technical docs, or deep research.
+    """
+    try:
+        results = exa_client.search_and_contents(
+            query=query,
+            type="neural",
+            num_results=5,
+            text=True,
+        )
+
+        output = []
+        for r in results.results:
+            output.append(f"**{r.title}**\n{r.text[:500]}...\nSource: {r.url}\n")
+
+        return "\n---\n".join(output) if output else "No results found."
+    except Exception as e:
+        return f"Research search error: {str(e)}"
 
 
 @tool
@@ -97,7 +121,7 @@ class AgentState(TypedDict):
 # AGENT GRAPH
 # ============================================
 
-tools = [web_search, think_deeply]
+tools = [web_search, research_search, think_deeply]
 
 def should_continue(state: AgentState) -> Literal["tools", "end"]:
     """Decide if agent should use tools or finish"""
